@@ -1,4 +1,5 @@
 interface Trip {
+    _id:string,
     id: string;
     name: string;
     destination: string;
