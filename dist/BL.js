@@ -1,5 +1,7 @@
 //modules
-import { getAllData, getDataById, deleteData, updateData } from "./dal.js";
+import { getAllData, getDataById, dal_delete, dal_update, insertUser, dal_login, dal_newTrip, } from "./dal.js";
+import { Err } from "./types.js";
+import jwt from "jsonwebtoken";
 //get all trips
 async function getData() {
     const dataJson = await getAllData();
@@ -10,18 +12,64 @@ async function getData() {
 async function tripById(req) {
     let { id } = req.params;
     if (!id) {
-        throw { code: 422, massage: "didnt recive id! this is what i got " + id };
+        throw new Err(422, "didn't get id! this is what i got " + id);
     }
     const dataJson = await getDataById(req.params.id);
     if (!(dataJson instanceof Error))
         return dataJson;
 }
 //delete trip
-function deleteTrip(id) {
-    deleteData(id);
+function bl_delete(req) {
+    const { id } = req.params;
+    if (!id)
+        throw new Err(400, "didn't get id, this is what i gat " + id);
+    const response = dal_delete(id);
+    return response;
 }
-//update trip 
-function updateTrip(newData, id) {
-    updateData(newData, id);
+//update trip
+async function bl_update(req) {
+    const { id } = req.params;
+    const newData = req.body;
+    if (!id)
+        throw new Err(400, "didn't get id, this is what i gat " + id);
+    if (!newData)
+        new Err(400, "didn't get data body");
+    const dal_updateResponds = await dal_update(newData, id);
+    return dal_updateResponds;
 }
-export { getData, tripById, deleteTrip, updateTrip };
+//register user
+async function bl_insertUser(req) {
+    const userEmail = req.body.email;
+    const userPassword = req.body.password;
+    if (!userEmail)
+        throw new Err(400, "didn't get user email");
+    if (!userPassword)
+        throw new Err(400, "didn't get user password");
+    const dal_respond = await insertUser(userEmail, userPassword);
+    return dal_respond;
+}
+//user login
+const bl_login = async (req) => {
+    const userEmail = req.body.email;
+    const userPassword = req.body.password;
+    if (!userEmail)
+        throw new Err(400, "didn't get user email");
+    if (!userPassword)
+        throw new Err(400, "didn't get user password");
+    const dal_respond = await dal_login(userEmail, userPassword);
+    if (dal_respond) {
+        if (!process.env.ACCESS_TOKEN_SECRET)
+            throw new Err(500, "problem with getting token");
+        const accessToken = jwt.sign(userPassword, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30s" });
+        return accessToken;
+    }
+};
+//new trip
+async function bl_newTrip(req) {
+    const newData = req.body;
+    if (!newData)
+        throw new Err(400, "didn't get data");
+    const dal_respond = await dal_newTrip(newData);
+    return dal_respond;
+}
+export { getData, tripById, bl_delete, bl_update, bl_insertUser, bl_login, bl_newTrip };

@@ -4,6 +4,8 @@ import express from "express";
 import { router } from "./routs.js";
 import morgan from "morgan";
 import cors from "cors"
+import { authenticationToken } from "./authentication.js";
+
 //create connection to mongoDb
 export async function connectToDb(){
    await mongoose.connect("mongodb://127.0.0.1:27017/tripsData")
@@ -13,7 +15,7 @@ const app = express();
 app.use(cors())
 app.use(morgan("combined"));
 app.use(express.json());
-app.use("/api", router);
+app.use("/api",router);
 
 
 //creating the server

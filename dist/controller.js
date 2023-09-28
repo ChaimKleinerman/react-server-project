@@ -1,9 +1,14 @@
-import { getData, tripById, deleteTrip, updateTrip } from "./BL.js";
+//modules
+import { getData, tripById, bl_delete, bl_insertUser, bl_login, bl_update, bl_newTrip, } from "./BL.js";
+import { Err } from "./types.js";
+import dotenv from "dotenv";
+//config
+dotenv.config();
 //get all trips
 const allTrips = (req, res) => {
     getData()
         .then((data) => {
-        res.send(data);
+        res.json(data);
     })
         .catch((error) => {
         console.error("An error occurred:", error);
@@ -13,48 +18,80 @@ const allTrips = (req, res) => {
 //get data by id
 const TripByIdController = async (req, res) => {
     try {
-        await tripById(req);
+        const user_id = await tripById(req);
+        res.send(user_id);
     }
     catch (err) {
-        res.status(err.code);
-        res.send(err.massage);
+        if (err instanceof Err) {
+            res.status(err.code);
+            res.send(err.message);
+        }
     }
-    // const userId:string = req.params.id;
-    // tripById(userId)
-    //     .then((filterData) => {
-    //         res.send(filterData);
-    //     })
-    //     .catch((error) => {
-    //         console.error("An error occurred:", error);
-    //         res.status(500).send("Internal Server Error");
-    //     });
 };
 //delete trip
-const controlDelete = async (req, res) => {
+const controller_delete = async (req, res) => {
     try {
-        const userId = req.params.id;
-        const result = deleteTrip(userId);
-        res.send('the trip deleted');
+        const result = await bl_delete(req);
+        res.send("the trip deleted");
     }
-    catch (error) {
-        console.error("An error occurred:", error);
-        res.status(500).send("Internal Server Error");
+    catch (err) {
+        if (err instanceof Err) {
+            res.status(err.code);
+            res.send(err.message);
+        }
     }
 };
 //update
-const controlUpdate = (req, res) => {
-    console.log('hi');
+const controller_update = async (req, res) => {
     try {
-        const newData = req.body;
-        const id = req.params.id;
-        const resolve = updateTrip(newData, id);
+        const resolve = await bl_update(req);
         res.send(resolve);
     }
-    catch (error) {
-        console.error("An error occurred:", error);
-        res.status(500).send("Internal Server Error");
+    catch (err) {
+        if (err instanceof Err) {
+            res.status(err.code);
+            res.send(err.message);
+        }
     }
 };
-//get trip by id
-// 
-export { allTrips, TripByIdController, controlDelete, controlUpdate };
+//register
+async function controllerUserRegister(req, res) {
+    try {
+        const result = await bl_insertUser(req);
+        res.send(result);
+    }
+    catch (err) {
+        if (err instanceof Err) {
+            res.status(err.code);
+            res.send(err.message);
+        }
+    }
+}
+//user login
+const controller_login = async (req, res) => {
+    try {
+        console.log(req.headers);
+        const token = await bl_login(req);
+        res.send(token);
+    }
+    catch (err) {
+        if (err instanceof Err) {
+            res.status(err.code);
+            res.send(err.message);
+        }
+    }
+};
+//new trip
+async function controller_newTrip(req, res) {
+    try {
+        const resolve = await bl_newTrip(req);
+        res.send(resolve);
+    }
+    catch (err) {
+        if (err instanceof Err) {
+            res.status(err.code);
+            res.send(err.message);
+        }
+    }
+}
+export { allTrips, TripByIdController, controller_delete, controller_update, controllerUserRegister, controller_login, controller_newTrip };

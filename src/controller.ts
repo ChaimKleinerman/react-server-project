@@ -1,10 +1,25 @@
-import { getData,tripById,deleteTrip,updateTrip} from "./BL.js";
-import { Request, Response } from "express";
+//modules
+import {
+    getData,
+    tripById,
+    bl_delete,
+    bl_insertUser,
+    bl_login,
+    bl_update,
+    bl_newTrip,
+} from "./BL.js";
+import { Request, Response, request } from "express";
+import { Err } from "./types.js";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+//config
+dotenv.config();
+
 //get all trips
-const allTrips = (req:Request, res:Response) => {
+const allTrips = (req: Request, res: Response) => {
     getData()
         .then((data) => {
-            res.send(data);
+            res.json(data);
         })
         .catch((error) => {
             console.error("An error occurred:", error);
@@ -12,48 +27,90 @@ const allTrips = (req:Request, res:Response) => {
         });
 };
 //get data by id
-const TripByIdController =async(req:Request, res:Response) => {
+const TripByIdController = async (req: Request, res: Response) => {
     try {
-        await tripById(req)
+        const user_id = await tripById(req);
+        res.send(user_id);
     } catch (err) {
-        res.status(err.code)
-        res.send(err.massage)
+        if (err instanceof Err) {
+            res.status(err.code);
+            res.send(err.message);
+        }
     }
-    // const userId:string = req.params.id;
-    // tripById(userId)
-    //     .then((filterData) => {
-    //         res.send(filterData);
-    //     })
-    //     .catch((error) => {
-    //         console.error("An error occurred:", error);
-    //         res.status(500).send("Internal Server Error");
-    //     });
 };
 //delete trip
-const controlDelete = async (req:Request, res:Response) => {
+const controller_delete = async (req: Request, res: Response) => {
     try {
-        const userId = req.params.id;
-        const result =  deleteTrip(userId);
-        res.send('the trip deleted');
-    } catch (error) {
-        console.error("An error occurred:", error);
-        res.status(500).send("Internal Server Error");
+        const result = await bl_delete(req);
+        res.send("the trip deleted");
+    } catch (err) {
+        if (err instanceof Err) {
+            res.status(err.code);
+            res.send(err.message);
+        }
     }
 };
 
 //update
-const controlUpdate = (req:Request, res:Response) => {
-    console.log('hi');
+const controller_update = async (req: Request, res: Response) => {
     
-   try {const newData = req.body;
-    const id = req.params.id;
-    const resolve = updateTrip(newData, id)
-        res.send(resolve)}
-        catch(error) {
-            console.error("An error occurred:", error);
-            res.status(500).send("Internal Server Error");
+    try {
+        const resolve = await bl_update(req);
+        
+        
+        res.send(resolve);
+    } catch (err) {
+        if (err instanceof Err) {
+            res.status(err.code);
+            res.send(err.message);
         }
+    }
 };
-//get trip by id
-// 
-export{allTrips,TripByIdController,controlDelete,controlUpdate}
+//register
+async function controllerUserRegister(req: Request, res: Response) {
+    try {
+        const result = await bl_insertUser(req);
+        res.send(result);
+    } catch (err) {
+        if (err instanceof Err) {
+            res.status(err.code);
+            res.send(err.message);
+        }
+    }
+}
+//user login
+const controller_login = async (req: Request, res: Response) => {
+    try {
+        console.log(req.headers);
+
+        const token = await bl_login(req);
+        res.send(token);
+    } catch (err) {
+        if (err instanceof Err) {
+            res.status(err.code);
+            res.send(err.message);
+        }
+    }
+};
+//new trip
+async function controller_newTrip(req:Request,res:Response) {
+    try {
+        const resolve = await bl_newTrip(req)
+        res.send(resolve)
+    } catch (err) {
+        if (err instanceof Err) {
+            res.status(err.code);
+            res.send(err.message);
+        }
+    }
+}
+
+export {
+    allTrips,
+    TripByIdController,
+    controller_delete,
+    controller_update,
+    controllerUserRegister,
+    controller_login,
+    controller_newTrip
+};
